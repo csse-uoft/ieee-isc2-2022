@@ -1,0 +1,26 @@
+# [Service CQ-2] How long did client \#2 stay in counselling?
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX cids: <http://ontology.eil.utoronto.ca/cids/cids#>
+PREFIX cp: <http://helpseeker.co/compass#>
+PREFIX i72: <http://ontology.eil.utoronto.ca/ISO21972/iso21972#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX landuse_50872: <http://ontology.eil.utoronto.ca/5087/2/LandUse/>
+PREFIX oep: <http://www.w3.org/2001/sw/BestPractices/OEP/SimplePartWhole/part.owl#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX time: <http://www.w3.org/2006/time#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX spif: <http://spinrdf.org/spif#>
+PREFIX ofn: <http://www.ontotext.com/sparql/functions/>
+SELECT DISTINCT ?client ?weeks
+WHERE { 	
+    bind(cp:Client2 as ?client).
+    bind(cp:INST-Counseling as ?serviceCode).
+    ?serviceEvent rdf:type cp:ServiceEvent ; 
+          cp:forClient ?client ;
+          time:hasBeginning ?start;
+          time:hasEnd ?end;
+          cids:hasCode ?serviceCode.
+    bind((ofn:weeksBetween(
+           spif:parseDate(?end, "yyyy-MM-dd'T'HH:mm:ss.SSS"), 	
+           spif:parseDate(?start, "yyyy-MM-dd'T'HH:mm:ss.SSS"))) as ?weeks).
+} 

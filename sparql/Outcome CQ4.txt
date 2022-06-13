@@ -1,0 +1,30 @@
+# [Outcome CQ-4] What areas is funding currently going toward and how much of this funding is my organization getting? 
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX cids: <http://ontology.eil.utoronto.ca/cids/cids#>
+PREFIX cp: <http://helpseeker.co/compass#>
+PREFIX i72: <http://ontology.eil.utoronto.ca/ISO21972/iso21972#>
+PREFIX landuse_50872: <http://ontology.eil.utoronto.ca/5087/2/LandUse/>
+SELECT DISTINCT  ?location  ?forCode (sum(?amount) as ?funds) ?toMyOrg where {
+    bind(cp:Org13 as ?myOrg).
+    ?fundersOrg a cp:Organization.
+    ?fundersModel cids:forOrganization ?fundersOrg.
+    ?fundersModel cids:hasProgram ?fundersProgram.
+    
+    ?forOrg a cp:Organization.
+    ?forModel cids:forOrganization ?forOrg.
+    ?forModel cids:hasProgram ?forProgram.
+    
+    ?funding a cp:Funding.
+    ?funding cp:forProgram ?forProgram.
+    ?funding cp:receivedAmount ?amount.
+    ?forProgram cids:hasService ?forService.
+    ?forService cids:hasCode ?forCode.
+    ?forService cids:hasBeneficialStakeholder ?sh.
+    ?sh i72:located_in ?location.
+    
+    # The program that provides the funding
+    ?funding cp:fundersProgram ?fundersProgram.
+    bind((?forOrg = ?myOrg) as ?toMyOrg).
+    MINUS {?forService cids:hasCode cp:INST-Funding.}.
+} GROUP BY ?location  ?forCode ?toMyOrg
+ORDER BY ?location  ?forCode desc(?forMyorg)

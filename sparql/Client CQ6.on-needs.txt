@@ -1,0 +1,13 @@
+# [Client CQ-6]} If I don't like the program what are my other options?
+PREFIX cp: <http://helpseeker.co/compass#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX cids: <http://ontology.eil.utoronto.ca/cids/cids#>
+SELECT DISTINCT ?service ?code 
+WHERE {  
+    BIND(cp:NS-Housing AS ?needSatisfier).
+    BIND(cp:Comp-Inst-Female-Homeless-Area0 AS ?compositeCharacteristic)
+    ?service  rdf:type  cp:Service.
+    ?service cids:hasCode ?code. 
+    ?service  cp:providesSatisfier  ?needSatisfier.
+    ?service cp:hasRequirement ?compositeCharacteristic.
+ }

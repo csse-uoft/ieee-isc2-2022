@@ -1,0 +1,31 @@
+# [Service CQ-1]  What are the key demographics of the highest systems users (age, ethnicity, immigration, etc)? 
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX cids: <http://ontology.eil.utoronto.ca/cids/cids#>
+PREFIX cp: <http://helpseeker.co/compass#>
+PREFIX i72: <http://ontology.eil.utoronto.ca/ISO21972/iso21972#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX oep: <http://www.w3.org/2001/sw/BestPractices/OEP/SimplePartWhole/part.owl#>
+SELECT DISTINCT ?clientCode ?serviceCode (COUNT(?clientCode) AS ?count)
+WHERE { 
+    {
+        SELECT DISTINCT ?client ?serviceCode
+        WHERE {
+            ?client rdf:type cp:Client.
+            ?serviceEvent rdf:type cp:ServiceEvent;
+                    cp:forClient ?client ;
+                    cids:hasCode ?serviceCode.
+        }
+    }
+    ?client cp:satisfiesStakeholder ?stakeholder.
+    ?stakeholder a cids:Stakeholder.
+    {
+        ?stakeholder cids:hasCharacteristic [cids:hasCode ?clientCode].
+    } UNION {
+        ?stakeholder cids:hasCharacteristic [
+            a cids:CompositeCharacteristic;
+            oep:hasPart [cids:hasCode ?clientCode]
+        ]
+    }
+
+} GROUP BY ?clientCode ?serviceCode
+ORDER BY ?serviceCode desc(?count)

@@ -1,0 +1,46 @@
+# [Outcome CQ-2] What is the representation of these groups in my community?
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX cids: <http://ontology.eil.utoronto.ca/cids/cids#>
+PREFIX cp: <http://helpseeker.co/compass#>
+PREFIX i72: <http://ontology.eil.utoronto.ca/ISO21972/iso21972#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX oep: <http://www.w3.org/2001/sw/BestPractices/OEP/SimplePartWhole/part.owl#>
+PREFIX landuse_50872: <http://ontology.eil.utoronto.ca/5087/2/LandUse/>
+SELECT DISTINCT ?commChar ?loc ?serviceCode (count(?demographic) as ?count) ?population (round(100*?count/?population) as ?percent)
+WHERE { 
+    bind(cp:Area0_Location as ?loc).
+    {
+        SELECT DISTINCT ?client ?serviceCode
+        WHERE {
+		    ?client rdf:type cp:Client.
+		    ?serviceEvent rdf:type cp:ServiceEvent;
+                    cp:forClient ?client ;
+            		cids:hasCode ?serviceCode.
+        }
+    }
+    ?client cp:satisfiesStakeholder ?stakeholder.
+    ?stakeholder a cids:Stakeholder ; 
+                 i72:located_in ?loc.
+    {
+        ?stakeholder cids:hasCharacteristic [cids:hasCode ?demographic].
+    } UNION {
+        ?stakeholder cids:hasCharacteristic [
+            a cids:CompositeCharacteristic;
+            oep:hasPart [cids:hasCode ?demographic]
+        ]
+    }
+	?commChar a cp:CommunityCharacteristic.
+    {
+        ?commChar cids:hasCharacteristic ?compChar.
+    	?compChar oep:hasPart [cids:hasCode ?demographic].
+    } UNION {
+        ?commChar cids:hasCharacteristic ?demographic.
+    }
+    ?commChar cp:hasNumber ?population .
+    ?comm cp:hasCommunityCharacteristic ?commChar ;
+    		landuse_50872:hasLandArea ?landArea.
+    ?landArea 	landuse_50872:parcelHasLocation ?loc.
+
+
+} GROUP BY ?commChar ?serviceCode ?loc ?population ?loc 
+ORDER BY ?loc desc(?percent) desc(?count) ?commChar ?serviceCode

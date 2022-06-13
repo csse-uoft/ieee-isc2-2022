@@ -1,0 +1,77 @@
+# [Service CQ-3] What is causing barriers to accessing Housing?
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX cids: <http://ontology.eil.utoronto.ca/cids/cids#>
+PREFIX cp: <http://helpseeker.co/compass#>
+PREFIX i72: <http://ontology.eil.utoronto.ca/ISO21972/iso21972#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX landuse_50872: <http://ontology.eil.utoronto.ca/5087/2/LandUse/>
+PREFIX oep: <http://www.w3.org/2001/sw/BestPractices/OEP/SimplePartWhole/part.owl#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX : <http://ontology.eil.utoronto.ca/Compass/compass#>
+
+SELECT DISTINCT ?serviceCode ?forService ?failureCode ?barrierCode ?failureDescription
+WHERE {
+    ?serviceCode rdf:type cp:CL-Shelter.
+   
+    ?forStakeholder a cids:Stakeholder.
+
+    ?forService a cp:Service;
+        cids:hasCode ?serviceCode.
+    filter(?serviceCode != cp:INST-Funding).
+    ?forService cids:hasBeneficialStakeholder ?beneficialStakeholder.
+    ?beneficialStakeholder i72:located_in ?loc1.
+    ?forStakeholder i72:located_in ?loc2.
+
+    # first, check for incorrect location
+    bind(IRI(REPLACE(str(?loc1), "http://helpseeker.co/compass#", "http://helpseeker.co/compass#INST-", "i")) AS ?failureCode1).
+
+    # second, check for missing required codes if location is correct
+    {
+        ?beneficialStakeholder cids:hasCharacteristic [cids:hasCode ?failureCode2].
+    } UNION {
+        ?beneficialStakeholder cids:hasCharacteristic [
+            a cids:CompositeCharacteristic;
+            oep:hasPart [cids:hasCode ?failureCode2]
+        ]
+    }
+    FILTER NOT EXISTS{
+        {
+            ?forStakeholder cids:hasCharacteristic [cids:hasCode ?failureCode2].
+        } UNION {
+            ?forStakeholder cids:hasCharacteristic [
+                a cids:CompositeCharacteristic;
+                oep:hasPart [cids:hasCode ?failureCode2]
+            ]
+        }
+    }
+
+#	# assign the failureCode
+    bind(if(?loc1 != ?loc2, ?failureCode1, ?failureCode2) as ?failureCode).
+#
+   OPTIONAL{
+       # find a failure entry, if available
+       ?forFailure a cp:ServiceFailureEvent;
+                    cids:hasDescription ?failureDescription_tmp.
+
+        {
+            ?forFailure cids:hasCharacteristic [cids:hasCode ?failureCode].
+        } union {
+            ?forFailure cids:hasCharacteristic [
+                a cids:CompositeCharacteristic;
+                oep:hasPart [cids:hasCode ?failureCode]
+            ]
+        }
+        OPTIONAL{
+        ?forFailure cp:hasFailureType ?failureType.
+        {
+            ?failureType cids:hasOutcome ?outcome.
+            ?outcome cids:hasCode ?barrierCode_tmp.
+        } UNION {
+            ?failureType cids:hasCode ?barrierCode_tmp.
+        }
+        }
+    }
+    bind(if(!bound(?forFailure), "Failure not predefined", ?failureDescription_tmp) as ?failureDescription).
+    bind(if(!bound(?barrierCode_tmp), "No barrier code defined", ?barrierCode_tmp) as ?barrierCode).
+
+} ORDER BY ?serviceCode ?forService desc(?forFailure) desc(?failureDescription) desc(?barrierCode)  ?beneficialStakeholder ?failureCode

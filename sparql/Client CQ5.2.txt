@@ -1,0 +1,23 @@
+# [Client CQ-5] (5.2) Do I have to be sober?
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX cids: <http://ontology.eil.utoronto.ca/cids/cids#>
+PREFIX cp: <http://helpseeker.co/compass#>
+PREFIX : <http://helpseeker.co/compass#>
+PREFIX i72: <http://ontology.eil.utoronto.ca/ISO21972/iso21972#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX landuse_50872: <http://ontology.eil.utoronto.ca/5087/2/LandUse/>
+PREFIX oep: <http://www.w3.org/2001/sw/BestPractices/OEP/SimplePartWhole/part.owl#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+SELECT DISTINCT ?service ?req ?sober
+WHERE { 
+    ?service rdf:type cp:Service;
+    	cids:hasCode ?hasCode.
+    ?hasCode rdf:type cp:CL-Shelter.
+    {   ?service :hasRequirement [cids:hasCode ?req]. 
+    } UNION {
+        ?service :hasRequirement [
+            rdf:type cids:CompositeCharacteristic   ; 
+            oep:hasPart [cids:hasCode ?req]]  .
+    }
+    bind((?req = cp:INST-Sober) as ?sober).    
+}

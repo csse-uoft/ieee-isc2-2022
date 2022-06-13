@@ -1,0 +1,15 @@
+# [Client Q-3]} Which services match my needs?
+PREFIX cp: <http://helpseeker.co/compass#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX cids: <http://ontology.eil.utoronto.ca/cids/cids#>
+SELECT DISTINCT ?service ?code
+WHERE {  
+    BIND(cp:Client16 AS ?client).
+    ?client  cp:hasNeed  ?need. 
+    ?need  rdf:type  cp:ClientNeed.
+    ?needSatisfier  rdf:type  cp:NeedSatisfier.
+    ?need  cp:hasNeedSatisfier  ?needSatisfier.
+    ?service  rdf:type  cp:Service.
+    ?service  cp:providesSatisfier ?needSatisfier.
+    ?service cids:hasCode ?code 
+ }

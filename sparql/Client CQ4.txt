@@ -1,0 +1,26 @@
+# [Client CQ-4] I have a history of trauma; am I going to have to talk about that in the program?
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX cids: <http://ontology.eil.utoronto.ca/cids/cids#>
+PREFIX cp: <http://helpseeker.co/compass#>
+PREFIX : <http://helpseeker.co/compass#>
+PREFIX i72: <http://ontology.eil.utoronto.ca/ISO21972/iso21972#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX landuse_50872: <http://ontology.eil.utoronto.ca/5087/2/LandUse/>
+PREFIX oep: <http://www.w3.org/2001/sw/BestPractices/OEP/SimplePartWhole/part.owl#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+SELECT ?service ?will_discuss_trauma WHERE {{
+        SELECT ?service (count(?service) as ?count)
+        WHERE { 
+            bind(cp:INST-Can_Discuss_Trauma_Yes as ?req).
+            bind(cp:S16-Clinic as ?service).
+            {   ?stakeholder cids:hasCharacteristic [cids:hasCode ?req].
+                ?service :hasRequirement [cids:hasCode ?req]. 
+            } UNION {
+                ?stakeholder cids:hasCharacteristic [cids:hasCode ?req].
+                ?service :hasRequirement [
+                    rdf:type cids:CompositeCharacteristic   ; 
+                    oep:hasPart [cids:hasCode ?req]]  .
+            }
+        } GROUP BY ?service
+    } BIND( (?count >= 1) AS ?will_discuss_trauma)
+}

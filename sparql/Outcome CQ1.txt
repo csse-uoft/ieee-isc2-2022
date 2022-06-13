@@ -1,0 +1,27 @@
+# [Outcome CQ-1] What are the associated priority demographic groups?
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX cids: <http://ontology.eil.utoronto.ca/cids/cids#>
+PREFIX cp: <http://helpseeker.co/compass#>
+PREFIX i72: <http://ontology.eil.utoronto.ca/ISO21972/iso21972#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX landuse_50872: <http://ontology.eil.utoronto.ca/5087/2/LandUse/>
+PREFIX oep: <http://www.w3.org/2001/sw/BestPractices/OEP/SimplePartWhole/part.owl#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX : <http://ontology.eil.utoronto.ca/Compass/compass#>
+SELECT ?loc ?stakeholder ?code (count(?stakeholder) as ?count)
+WHERE { 
+    ?serviceEvent rdf:type cp:ServiceEvent ;
+                  cp:forClient [cp:satisfiesStakeholder ?stakeholder];
+                  cids:hasCode ?code.
+    ?stakeholder a cids:Stakeholder ;
+                 i72:located_in ?loc.
+    {
+        ?stakeholder cids:hasCharacteristic [cids:hasCode ?demographic].
+    } UNION {
+        ?stakeholder cids:hasCharacteristic [
+            a cids:CompositeCharacteristic;
+            oep:hasPart [cids:hasCode ?demographic]
+        ]
+    }
+} GROUP BY ?stakeholder ?code ?loc
+ORDER BY ?loc desc(?count) ?stakeholder ?code 

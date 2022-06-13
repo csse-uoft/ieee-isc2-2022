@@ -1,0 +1,89 @@
+# [Service CQ-4] What other programs or services could I refer clients to at this time?
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX cids: <http://ontology.eil.utoronto.ca/cids/cids#>
+PREFIX cp: <http://helpseeker.co/compass#>
+PREFIX i72: <http://ontology.eil.utoronto.ca/ISO21972/iso21972#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX landuse_50872: <http://ontology.eil.utoronto.ca/5087/2/LandUse/>
+PREFIX oep: <http://www.w3.org/2001/sw/BestPractices/OEP/SimplePartWhole/part.owl#>
+
+
+SELECT DISTINCT ?forService ?forCode where {
+    bind(cp:sh-Female-Homeless-in_Area0 as ?forStakeholder).
+    ?forService cids:hasCode ?forCode.
+    ?forService a cp:Service.
+    ?forService cp:hasRequirement ?req;
+                cids:hasBeneficialStakeholder ?beneSh.
+    ?beneSh i72:located_in ?location.
+    {
+        ?req cids:hasCode ?reqCode.
+    } UNION {
+        ?req a cids:CompositeCharacteristic.
+        ?req oep:hasPart ?part.
+        ?part cids:hasCode ?reqCode.       
+    }
+
+    ?forStakeholder a cids:Stakeholder.
+    ?forStakeholder i72:located_in ?location.
+    {
+        ?forStakeholder cids:hasCharacteristic [cids:hasCode ?shCode].
+    } UNION {
+        ?forStakeholder cids:hasCharacteristic [
+            a cids:CompositeCharacteristic;
+            oep:hasPart [cids:hasCode ?shCode]
+        ]
+    }
+
+    {
+        SELECT ?forService ?req (COUNT(?reqCode) as ?numReqCodes) where {
+            { 
+                SELECT DISTINCT ?forService ?req ?reqCode where {
+                    ?forService a cp:Service.
+                    ?forService cp:hasRequirement ?req.
+                    {
+                        ?req cids:hasCode ?reqCode.
+                    } UNION {
+                        ?req a cids:CompositeCharacteristic.
+                        ?req oep:hasPart ?part.
+                        ?part cids:hasCode ?reqCode.   
+                    }
+                }
+            }} GROUP BY ?forService ?req
+    }
+    FILTER (?shCode = ?reqCode)
+    # remove any service that does not require all characteristics of the client
+    FILTER EXISTS {
+        SELECT DISTINCT ?forStakeholder ?beneSh where {
+            ?forStakeholder a cids:Stakeholder;
+                            i72:located_in ?location.
+            {
+                ?forStakeholder cids:hasCharacteristic [oep:hasPart [cids:hasCode ?code]].
+            } UNION {
+                ?forStakeholder cids:hasCharacteristic [cids:hasCode ?code].
+            }
+            ?beneSh a cids:Stakeholder;
+                    i72:located_in ?location.
+            {
+                ?beneSh cids:hasCharacteristic [oep:hasPart [cids:hasCode ?code]].
+            } UNION {
+                ?beneSh cids:hasCharacteristic [cids:hasCode ?code].
+            }
+            {
+                SELECT DISTINCT ?beneSh (count(?code) as ?numBeneShCodes) where {
+                    ?beneSh a cids:Stakeholder.
+                    {
+                        ?beneSh cids:hasCharacteristic [oep:hasPart [cids:hasCode ?code]].
+                    } UNION {
+                        ?beneSh cids:hasCharacteristic [cids:hasCode ?code].
+                    }
+                } GROUP BY ?beneSh
+            }
+        } 
+        GROUP BY ?forStakeholder ?beneSh ?numBeneShCodes ?location
+        HAVING (?numBeneShCodes = count(?code))
+    }
+} 
+GROUP BY ?forStakeholder ?forService ?forCode ?location ?numReqCodes ?part ?req ?beneSh ?class
+HAVING (count(?shCode) = ?numReqCodes)
+
+ORDER BY ?forStakeholder?forCode ?community ?shCode 
